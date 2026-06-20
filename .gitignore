@@ -2,3 +2,4 @@ Include/
 Scripts/
 Lib/
 pyenv.cfg
+src/.db
