@@ -1,0 +1,102 @@
+<!-- <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=19dd6e7a32444c3cb681897c91071b1f"></script>
+<script src="/index.js"></script>
+
+<div id="calculator" style="width: 100%; height: 100%"></div>
+
+<script>
+    var elt = document.getElementById("calculator");
+    var calculator = Desmos.GraphingCalculator(elt);
+</script>
+ -->
+
+<!doctype html>
+<html>
+    <head>
+        <title>Desmos 3D Multiplayer Roomlist</title>
+        <link rel="icon" href="favicon.png" />
+        <link rel="stylesheet" href="index.css" />
+    </head>
+
+    <style>
+        a,
+        table,
+        td,
+        tr,
+        caption,
+        body {
+            background-color: black;
+            /*color: #187a3d;*/
+            color: #00ff00;
+            font-family: "consolas";
+            text-align: center;
+            font-weight: bolder;
+            font-size: 1em;
+            letter-spacing: 10px;
+        }
+
+        table {
+            border: 15px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            height: 50%;
+            border-width: 2px;
+            padding: 4px;
+            border-spacing: 1px;
+            border-style: dotted;
+        }
+    </style>
+
+    <!-- <script>
+        async function GetUserCounts() {
+            try {
+                return await (await fetch("/counts")).json();
+            } catch {
+                return {
+                    "2d": "?",
+                    "3d": "?",
+                };
+            }
+        }
+
+        async function UpdateDisplayCounts() {
+            const counts = await GetUserCounts();
+            document.getElementById("count-2d").innerText = `[${counts["2d"]}]`;
+            document.getElementById("count-3d").innerText = `[${counts["3d"]}]`;
+        }
+
+        UpdateDisplayCounts();
+        setInterval(async () => await UpdateDisplayCounts(), 5000);
+    </script> -->
+
+    <body>
+        <table border="1">
+            <caption>
+                Desmos 3D Multiplayer Roomlist
+            </caption>
+            <thead>
+                <tr>
+                    <th scope="col">Edition</th>
+                    <th scope="col">Link</th>
+                    <th scope="col">Online</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row">2D</th>
+                    <td>
+                        <a href="/calculator">2D Multi-Player Calculator</a>
+                    </td>
+                    <td id="count-2d">[?]</td>
+                </tr>
+                <tr>
+                    <th scope="row">3D</th>
+                    <td><a href="/3d">3D Multi-Player Calculator</a></td>
+                    <td id="count-3d">[?]</td>
+                </tr>
+            </tbody>
+        </table>
+    </body>
+</html>
