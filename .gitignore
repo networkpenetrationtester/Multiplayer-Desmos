@@ -1,5 +1,5 @@
 Include/
 Scripts/
 Lib/
-pyenv.cfg
+pyvenv.cfg
 src/.db
