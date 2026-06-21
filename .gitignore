@@ -3,3 +3,4 @@ Scripts/
 Lib/
 pyvenv.cfg
 **/__pycache__
+src/test.py
