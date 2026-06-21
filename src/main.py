@@ -1,17 +1,28 @@
-from enum import Enum
+import asyncio
+import json
+import secrets
+from datetime import datetime
+from hashlib import sha256
 from random import randint
 
 import psycopg2
 import redis
 from argon2 import PasswordHasher
-from fastapi import FastAPI
+from argon2.exceptions import (
+    InvalidHashError,
+    VerificationError,
+    VerifyMismatchError,
+)
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from psycopg2.sql import SQL, Identifier, Placeholder
+from pydantic import ValidationError
+from ulid import ULID
+
 from src.modules.objects import *
 from src.modules.requests import *
 from src.modules.responses import *
-from ulid import ULID
 
 # TODO: ENV VARIABLES
 # every ID will be a ULID
@@ -55,6 +66,25 @@ pg_cur.execute(
 pg_conn.commit()
 
 
+def APIResponse(
+    success: bool,
+    failure_code: FAILURE_CODES | None = None,
+    message: str | None = None,
+    data: dict[str, Any] | None = None,
+):
+
+    d = dict()
+    d["success"] = success
+    if failure_code:
+        d["failure_code"] = failure_code
+    if message:
+        d["message"] = message
+    if data:
+        d["data"] = data
+
+    return d
+
+
 def AddUser(user: User):
     existing_user = GetUserByUsername(user.username)
 
@@ -69,6 +99,7 @@ def AddUser(user: User):
             ),
         )
         pg_conn.commit()
+
         return user
 
 
@@ -86,6 +117,7 @@ def GetUserByUsername(username: str):
 
     if user:
         (id, display_name, username, password_hash) = user
+
         return User(
             id=id,
             display_name=display_name,
@@ -104,6 +136,7 @@ def GetUserByID(id: str):
 
     if user:
         (id, display_name, username, password_hash) = user
+
         return User(
             id=id,
             display_name=display_name,
@@ -112,12 +145,38 @@ def GetUserByID(id: str):
         )
 
 
-def CheckBearer():
-    pass
+def GenerateToken():
+    return sha256(
+        string=str(secrets.SystemRandom().getrandbits(256)).encode()
+    ).hexdigest()
+
+
+def GetToken(userid: str):
+    token = rd.get(f"user:{userid}:token")
+    if not token:
+        token = SetToken(userid)
+
+    return token
+
+
+def SetToken(userid: str):
+    token = GenerateToken()
+    rd_key = f"user:{userid}:token"
+    rd.set(rd_key, token)
+    rd.expire(rd_key, 60 * 60 * 24 * 30)
+
+    return token
 
 
 def CheckPassword(password_hash: str, password: str):
-    return ph.verify(password_hash, password)
+    try:
+        return ph.verify(password_hash, password)
+    except VerifyMismatchError:
+        return False
+    except VerificationError:
+        return False
+    except InvalidHashError:
+        return False
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -136,7 +195,7 @@ def _3d():
 
 
 @app.post("/api/register", response_class=JSONResponse)
-def _register(request: RegisterRequest):  # TODO: APIResponse maker thing
+async def _register(request: RegisterRequest):  # TODO: APIResponse maker thing
     user = AddUser(
         User(
             id=str(ULID()),
@@ -144,13 +203,57 @@ def _register(request: RegisterRequest):  # TODO: APIResponse maker thing
             password_hash=ph.hash(request.password),
         )
     )
-    return user is not None
+
+    if user:
+        token = SetToken(user.id)
+
+        return APIResponse(success=True, data={"token": token})
+    else:
+        return APIResponse(
+            success=False,
+            failure_code=FAILURE_CODES.USER_EXISTS,
+            message="That user already exists.",
+        )
 
 
 @app.post("/api/login", response_class=JSONResponse)
-def _login(request: LoginRequest):
+async def _login(request: LoginRequest):
     user = GetUserByUsername(request.username)
-    return user and CheckPassword(user.password_hash, request.password)
+
+    if user:
+        if CheckPassword(user.password_hash, request.password):
+            token = GetToken(user.id)
+
+            return APIResponse(success=True, data={"token": token})
+        else:
+            return APIResponse(
+                success=False,
+                failure_code=FAILURE_CODES.PASSWORD_INVALID,
+                message="That password is incorrect.",
+            )
+    else:
+        return APIResponse(
+            success=False,
+            failure_code=FAILURE_CODES.USER_VOID,
+            message="That user does not exist.",
+        )
+
+
+# BEARER
+@app.post("/api/logout", response_class=JSONResponse)
+async def _logout(request: Request):
+    try:
+        bearer = request.headers.get("authorization")
+        if not bearer:
+            return APIResponse(success=False, failure_code=FAILURE_CODES.TOKEN_INVALID)
+        dict = await request.json()
+        logout_request = LogoutRequest(**dict)
+        if bearer is GetToken(logout_request.user_id):
+            return APIResponse(success=True, message="Successfully logged out.")
+    except ValidationError:
+        pass
+
+    return APIResponse(success=False, failure_code=FAILURE_CODES.GENERAL)
 
 
 @app.get("/api/counts", response_class=JSONResponse)
