@@ -1,16 +1,22 @@
 from pydantic import BaseModel
-from src.modules.objects import Room
+from pydantic.dataclasses import dataclass
 
 
 class RegisterRequest(BaseModel):
-    email: str
+    # email: str
     username: str
     password: str
 
 
-class LoginRequest(BaseModel):
+@dataclass
+class LoginRequest:
     username: str
     password: str
+
+
+# Bearer
+class LogoutRequest(BaseModel):
+    user_id: str
 
 
 class UpdateUserRequest(BaseModel):
@@ -28,7 +34,7 @@ class CreateRoomRequest(BaseModel):  # TODO: workers that clean up rooms with 0 
     password: str | None
 
 
-class ReadRoomsRequest(BaseModel):
+class GetRoomsRequest(BaseModel):
     include_passworded: bool
     include_auth_required: bool
 
