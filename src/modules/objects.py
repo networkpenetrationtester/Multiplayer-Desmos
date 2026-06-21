@@ -1,30 +1,27 @@
-from pydantic import BaseModel
+from pydantic.dataclasses import dataclass
 
 
-class User(BaseModel):
+@dataclass
+class User:
     id: str
-    display_name: str | None = None
     username: str
     password_hash: str
+    display_name: str | None = None
 
 
-class Room(BaseModel):
+@dataclass
+class Room:
     id: str
     name: str
-    password_hash: str | None = None
     hidden: bool
     auth_required: bool
+    password_hash: str | None = None
 
 
-class Graph(BaseModel):
+@dataclass
+class Graph:
     id: str
     owner_id: str
     name: str
     # content: array
     private: bool
-
-
-class APIResonse(BaseModel):
-    success: bool
-    message: str | None = None
-    data: dict = {}
