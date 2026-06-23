@@ -1,6 +1,6 @@
 async function GetUserCounts() {
   try {
-    return await (await fetch("/counts")).json();
+    return await (await fetch("/api/counts")).json();
   } catch {
     return {
       "2d": "?",
@@ -16,4 +16,4 @@ async function UpdateDisplayCounts() {
 }
 
 UpdateDisplayCounts();
-setInterval(async () => await UpdateDisplayCounts(), 5000);
+setInterval(async () => await UpdateDisplayCounts(), 60 * 1000);
