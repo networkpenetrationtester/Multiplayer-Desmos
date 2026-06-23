@@ -23,6 +23,7 @@ table {
     height: 50%;
 }
 
+caption,
 table {
     border-width: 2px;
     padding: 4px;
