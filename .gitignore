@@ -1,6 +1,10 @@
-Include/
-Scripts/
 Lib/
-pyvenv.cfg
+Scripts/
+
 **/__pycache__
-src/test.py
+
+config/external.env
+config/internal.env
+config/redis.acl
+
+pyvenv.cfg
