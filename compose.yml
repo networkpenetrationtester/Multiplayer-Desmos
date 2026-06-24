@@ -1,38 +1,70 @@
 name: desmos_multiplayer
 
 services:
-  # api:
-  #   image: python:latest
-  #   # environment:
-  #   volumes:
-  #     - python_data:/var/lib/python
-  #   ports:
-  #     - "8080:8080"
-  #   restart: unless-stopped
-
   postgres:
     image: postgres:latest
-    environment:
-      POSTGRES_USER: desmos
-      POSTGRES_PASSWORD: desmos
-      POSTGRES_DB: desmos
-    volumes:
-      - postgres_data:/var/lib/postgresql
+    container_name: desmos_postgres
+    networks:
+      - arpanet
+    hostname: ${POSTGRES_HOSTNAME}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    # volumes:
+    #   - ./postgres_data:/var/lib/postgresql/data
+    environment:
+      PGHOST: ${POSTGRES_HOSTNAME}
+      PGPORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DATABASE} # TODO: make this dynamic
+      POSTGRES_USER: ${POSTGRES_USERNAME} # TODO: make this dynamic
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # TODO: make this dynamic
     restart: unless-stopped
+    profiles:
+      - dev
+      - prod
 
   redis:
     image: redis:latest
-    # environment:
-    volumes:
-      - redis_data:/data
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "desmos"]
+    container_name: desmos_redis
+    networks:
+      - arpanet
+    hostname: ${REDIS_HOSTNAME}
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    volumes:
+      - ./config/redis.acl:/config/redis.acl
+      # - ./redis_data:/var/lib/redis
+    command:
+      [
+        "redis-server",
+        "--bind",
+        "${REDIS_HOSTNAME}",
+        "--port",
+        "${REDIS_PORT}",
+        "--aclfile",
+        "/config/redis.acl",
+      ]
     restart: unless-stopped
+    profiles:
+      - dev
+      - prod
 
-volumes:
-  postgres_data:
-  redis_data:
-  python_data:
+  api:
+    build: .
+    depends_on:
+      - redis
+      - postgres
+    container_name: desmos_api
+    networks:
+      - arpanet
+    hostname: ${API_HOSTNAME}
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    env_file: ./config/internal.env
+    command: ["fastapi", "run", "main.py", "--port", "${API_PORT}"]
+    restart: unless-stopped
+    profiles:
+      - prod
+
+networks:
+  arpanet:
+    # driver: bridge
