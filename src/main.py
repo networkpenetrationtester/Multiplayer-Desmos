@@ -1,3 +1,9 @@
+import os
+import sys
+from os.path import dirname, join
+
+sys.path.append(os.path.dirname(__file__))
+
 from random import randint
 
 from fastapi import FastAPI, Request
@@ -6,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 from ulid import ULID
 
-from src.modules.database import (
+from modules.database import (
     AddUser,
     GetToken,
     GetUserByID,
@@ -14,10 +20,10 @@ from src.modules.database import (
     RemoveToken,
     SetToken,
 )
-from src.modules.objects import User
-from src.modules.requests import LoginRequest, LogoutRequest, RegisterRequest
-from src.modules.responses import FAILURE_CODES, APIResponse
-from src.modules.stateless import (
+from modules.objects import User
+from modules.requests import LoginRequest, LogoutRequest, RegisterRequest
+from modules.responses import FAILURE_CODES, APIResponse
+from modules.stateless import (
     ArgonHash,
     CheckPassword,
     ValidatePassword,
@@ -31,11 +37,12 @@ from src.modules.stateless import (
 
 
 app = FastAPI()
+www_dir = join(dirname(__file__), "www")
 
 
 @app.get("/", response_class=HTMLResponse)
 def _root():
-    return open("src/www/index.html").read()
+    return open(join(www_dir, "index.html")).read()
 
 
 @app.post("/api/register", response_class=JSONResponse)
@@ -166,4 +173,4 @@ def _counts():
     return {"2d": randint(0, 1000), "3d": randint(0, 1000)}
 
 
-app.mount("/", StaticFiles(directory="src/www"))
+app.mount("/", StaticFiles(directory=www_dir))
