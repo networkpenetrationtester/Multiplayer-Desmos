@@ -2,19 +2,40 @@ import psycopg2
 import redis
 from psycopg2.sql import SQL
 
-from src.modules.objects import User
-from src.modules.stateless import GenerateToken
+from modules.env import (
+    POSTGRES_DATABASE,
+    POSTGRES_HOSTNAME,
+    POSTGRES_PASSWORD,
+    POSTGRES_PORT,
+    POSTGRES_USERNAME,
+    REDIS_DATABASE,
+    REDIS_HOSTNAME,
+    REDIS_PASSWORD,
+    REDIS_PORT,
+    REDIS_USERNAME,
+)
+from modules.objects import User
+from modules.stateless import GenerateToken
 
 rd = redis.Redis(
-    host="localhost",
-    username="default",
-    password="desmos",
-    port=6379,
-    db=0,
+    host=REDIS_HOSTNAME,
+    port=REDIS_PORT,
+    db=REDIS_DATABASE,
+    username=REDIS_USERNAME,
+    password=REDIS_PASSWORD,
     decode_responses=True,
 )
-pg_conn = psycopg2.connect(dbname="desmos", user="desmos", password="desmos", port=5432)
+
+pg_conn = psycopg2.connect(
+    host=POSTGRES_HOSTNAME,
+    port=POSTGRES_PORT,
+    dbname=POSTGRES_DATABASE,
+    user=POSTGRES_USERNAME,
+    password=POSTGRES_PASSWORD,
+)
+
 pg_cur = pg_conn.cursor()
+
 pg_cur.execute(
     """CREATE TABLE IF NOT EXISTS users (
         id TEXT NOT NULL PRIMARY KEY,
@@ -23,6 +44,7 @@ pg_cur.execute(
         password_hash TEXT NOT NULL
     )"""
 )
+
 pg_cur.execute(
     """CREATE TABLE IF NOT EXISTS graphs (
         id TEXT NOT NULL PRIMARY KEY,
@@ -31,6 +53,7 @@ pg_cur.execute(
         content TEXT NOT NULL
     )"""
 )
+
 pg_conn.commit()
 
 
